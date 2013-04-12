@@ -24,7 +24,7 @@
 import psycopg2
 import os
 import redis
-import cPickle
+#import cPickle
 import hashlib
 from optparse import OptionParser
 
@@ -93,7 +93,7 @@ def cache_redis(sql, TTL = 3600):
     
     # Check if data is in cache.
     try:
-      res = cPickle.loads(R_SERVER.get(key))
+      res = eval(R_SERVER.get(key))
       if options.debug:
         print "This was return from redis"    
       
@@ -103,12 +103,12 @@ def cache_redis(sql, TTL = 3600):
       data = cur.fetchall()
         
       # Put data into cache for TTL time
-      R_SERVER.set(key, cPickle.dumps(data) )
+      R_SERVER.set(key, data )
       R_SERVER.expire(key, TTL);
  
       if options.debug:
         print "Put data in redis and return the data"
-      res=cPickle.loads(R_SERVER.get(key))
+      res=eval(R_SERVER.get(key))
 
     return res
 
