@@ -83,9 +83,6 @@ except:
 cur = db.cursor()
 
 def cache_memcache(sql, TTL = 3600):
-    # INPUT 1 : SQL query
-    # INPUT 2 : Time To Life
-    # OUTPUT  : Array of result
  
     # Create a hash key
     hash = hashlib.sha224(sql).hexdigest()
@@ -98,18 +95,18 @@ def cache_memcache(sql, TTL = 3600):
       res = mc.get(key)
       if options.debug:
         print "This was returned from memcache"    
-      return cPickle.loads(mc.get(key))
+      return res
     except:
       # Do PostgreSQL query  
       cur.execute(sql)
       data = cur.fetchall()
         
-      # Put data into cache for 1 hour
-      mc.set(key, cPickle.dumps(data), TTL )
+      # Put data into cache for TTL
+      mc.set(key, data, TTL)
       
       if options.debug:
         print "Set data in memcache and return the data"
-      res = cPickle.loads(mc.get(key))
+      res = mc.get(key)
     return res
 
 def bench():

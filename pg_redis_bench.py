@@ -82,12 +82,9 @@ except:
 
 cur = db.cursor()
 
-# cache_redis module borrowed from http://clasense4.wordpress.com/2012/07/29/python-redis-how-to-cache-python-mysql-result-using-redis/
+# cache_redis module based on http://clasense4.wordpress.com/2012/07/29/python-redis-how-to-cache-python-mysql-result-using-redis/
 def cache_redis(sql, TTL = 3600):
-    # INPUT 1 : SQL query
-    # INPUT 2 : Time To Life
-    # OUTPUT  : Array of result
- 
+
     # Create a hash key
     hash = hashlib.sha224(sql).hexdigest()
     key = "sql_cache:" + hash
@@ -96,7 +93,7 @@ def cache_redis(sql, TTL = 3600):
     
     # Check if data is in cache.
     try:
-      res = R_SERVER.get(key)
+      res = cPickle.loads(R_SERVER.get(key))
       if options.debug:
         print "This was return from redis"    
       
@@ -105,13 +102,14 @@ def cache_redis(sql, TTL = 3600):
       cur.execute(sql)
       data = cur.fetchall()
         
-      # Put data into cache for 1 hour
+      # Put data into cache for TTL time
       R_SERVER.set(key, cPickle.dumps(data) )
       R_SERVER.expire(key, TTL);
  
       if options.debug:
-        print "Set data redis and return the data"
-      res=R_SERVER.get(key)
+        print "Put data in redis and return the data"
+      res=cPickle.loads(R_SERVER.get(key))
+
     return res
 
 def bench():
