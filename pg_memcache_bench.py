@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-#    pg_redis_bench.py is licensed under the PostgreSQL License:
+#    pg_memcache_bench.py is licensed under the PostgreSQL License:
 #
 #    Copyright (c) 2012, PostgreSQL, Experts, Inc.
 #
@@ -23,7 +23,7 @@
 
 import psycopg2
 import os
-import redis
+import memcache
 import cPickle
 import hashlib
 from optparse import OptionParser
@@ -43,8 +43,8 @@ parser.add_option('-s', "--sql", action="store", type="string",
                   dest="sql")
 parser.add_option('', "--debug", action="store_const", const=1,
                   dest="debug", default=0)
-parser.add_option('', "--redis", action="store_const", const=1,
-                  dest="redis", default=0)
+parser.add_option('', "--memcache", action="store_const", const=1,
+                  dest="memcache", default=0)
 parser.add_option('-l', "--loops", action="store", type="int",
                   dest="loops", default=0)
 
@@ -63,8 +63,8 @@ sql = options.sql or "SELECT version()"
 loops = options.loops or 50000
 
 
-# Redis Object
-R_SERVER = redis.Redis("localhost")
+# Memcache Object
+mc = memcache.Client(['127.0.0.1:11211'], debug=0)
 
 connection_string = "dbname=%(dbname)s user=%(dbuser)s" % { 'dbname': DBNAME, 'dbuser': DBUSER }
 
@@ -82,8 +82,7 @@ except:
 
 cur = db.cursor()
 
-# cache_redis module borrowed from http://clasense4.wordpress.com/2012/07/29/python-redis-how-to-cache-python-mysql-result-using-redis/
-def cache_redis(sql, TTL = 3600):
+def cache_memcache(sql, TTL = 3600):
     # INPUT 1 : SQL query
     # INPUT 2 : Time To Life
     # OUTPUT  : Array of result
@@ -96,29 +95,28 @@ def cache_redis(sql, TTL = 3600):
     
     # Check if data is in cache.
     try:
-      res = R_SERVER.get(key)
+      res = mc.get(key)
       if options.debug:
-        print "This was return from redis"    
-      
+        print "This was returned from memcache"    
+      return cPickle.loads(mc.get(key))
     except:
       # Do PostgreSQL query  
       cur.execute(sql)
       data = cur.fetchall()
         
       # Put data into cache for 1 hour
-      R_SERVER.set(key, cPickle.dumps(data) )
-      R_SERVER.expire(key, TTL);
- 
+      mc.set(key, cPickle.dumps(data), TTL )
+      
       if options.debug:
-        print "Set data redis and return the data"
-      res=R_SERVER.get(key)
+        print "Set data in memcache and return the data"
+      res = cPickle.loads(mc.get(key))
     return res
 
 def bench():
   for i in range(1, loops):
     try:
-      if options.redis:
-        results = cache_redis(sql)
+      if options.memcache:
+        results = cache_memcache(sql)
       else:
         cur.execute(sql)
         results = cur.fetchall()
