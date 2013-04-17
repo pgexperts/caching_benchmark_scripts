@@ -46,7 +46,7 @@ parser.add_option('', "--debug", action="store_const", const=1,
 parser.add_option('', "--redis", action="store_const", const=1,
                   dest="redis", default=0)
 parser.add_option('-l', "--loops", action="store", type="int",
-                  dest="loops", default=0)
+                  dest="loops", default=50000)
 
 
 (options, args) = parser.parse_args()
@@ -60,7 +60,7 @@ DBPORT = options.pgport or os.getenv("PGPORT") or "5432"
 DBUSER = options.pguser or os.getenv("PGUSER") or "postgres"
 DBNAME = options.dbname or os.getenv("PGDATABASE") or "postgres"
 sql = options.sql or "SELECT version()"
-loops = options.loops or 50000
+loops = options.loops
 
 
 # Redis Object
@@ -113,7 +113,7 @@ def cache_redis(sql, TTL = 3600):
     return res
 
 def bench():
-  for i in range(1, loops):
+  for i in range(0, loops):
     try:
       if options.redis:
         results = cache_redis(sql)

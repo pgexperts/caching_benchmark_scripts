@@ -46,7 +46,7 @@ parser.add_option('', "--debug", action="store_const", const=1,
 parser.add_option('', "--memcache", action="store_const", const=1,
                   dest="memcache", default=0)
 parser.add_option('-l', "--loops", action="store", type="int",
-                  dest="loops", default=0)
+                  dest="loops", default=50000)
 
 
 (options, args) = parser.parse_args()
@@ -60,7 +60,6 @@ DBPORT = options.pgport or os.getenv("PGPORT") or "5432"
 DBUSER = options.pguser or os.getenv("PGUSER") or "postgres"
 DBNAME = options.dbname or os.getenv("PGDATABASE") or "postgres"
 sql = options.sql or "SELECT version()"
-loops = options.loops or 50000
 
 
 # Memcache Object
@@ -110,7 +109,7 @@ def cache_memcache(sql, TTL = 3600):
     return res
 
 def bench():
-  for i in range(1, loops):
+  for i in range(0, loops):
     try:
       if options.memcache:
         results = cache_memcache(sql)
